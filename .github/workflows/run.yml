@@ -6,6 +6,10 @@ on:
       timezone: "Asia/Kolkata"  # Run at the top of every hour in IST
   workflow_dispatch:
 
+concurrency:
+  group: "daily-health-mail"
+  cancel-in-progress: true
+
 jobs:
   run-script:
     runs-on: ubuntu-latest
