@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MedBrief</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      background-image: url('background.jpeg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: white;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    h2, h3, p { margin: 10px 0; }
+    form { display: flex; flex-direction: column; }
+
+    input, textarea, select, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button { cursor: pointer; }
+
+    .add-btn { background: green; color: white; }
+    .submit-btn { background: black; color: white; margin-top: 12px; }
+
+    .medicine-box {
+      position: relative; /* For delete button positioning */
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.9);
+      color: black;
+      border-radius: 6px;
+    }
+
+    .medicine-box input { width: 100%; margin-top: 5px; }
+
+    .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      color: red;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      input, textarea, select, button { font-size: 14px; padding: 10px; }
+      h2 { font-size: 1.5em; }
+      h3 { font-size: 1.2em; }
+      .delete-btn { font-size: 16px; }
+    }
+  #msg {
+    position: relative;
+    z-index: 1; /* above overlay */
+    color: black; /* readable over background */
+    background: rgba(255, 255, 255, 0.8); /* semi-transparent */
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+  }
+</style>
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>MedBrief – Daily Health Tracker</h2>
+
+    <form id="form">
+      <input type="text" id="name" placeholder="Your Name" required>
+      <input type="number" id="age" placeholder="Your Age" required>
+      <input type="text" id="blood" placeholder="Blood Group (e.g. O+)" required>
+      <textarea id="history" placeholder="Medical History (e.g. Diabetes, BP)"></textarea>
+      <input type="email" id="email" placeholder="Your Email" required>
+
+      <label for="timezone">Select Your Timezone:</label>
+      <select id="timezone" required>
+        <option value="">--Select Timezone--</option>
+        <option value="Asia/Kolkata">India (IST)</option>
+        <option value="America/New_York">USA East Coast (EST/EDT)</option>
+        <option value="America/Chicago">USA Central (CST/CDT)</option>
+        <option value="America/Los_Angeles">USA West Coast (PST/PDT)</option>
+        <option value="Europe/London">UK (GMT/BST)</option>
+        <option value="Europe/Paris">France (CET/CEST)</option>
+        <option value="Asia/Tokyo">Japan (JST)</option>
+        <option value="Australia/Sydney">Australia (AEST/AEDT)</option>
+      </select>
+      <br><br>
+
+      <h3>Medicines</h3>
+      <div id="medicines"></div>
+
+      <button type="button" class="add-btn" onclick="addMedicine()">+ Add Medicine</button>
+      <label style="margin-top: 10px; display: flex; align-items: center; color: white;">
+      <input type="checkbox" id="subscribed" checked style="margin-right: 8px;">
+      Receive Daily Health Reminders
+     </label>
+      <button type="submit" class="submit-btn">Start Tracking</button>
+    </form>
+
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    function addMedicine() {
+      const div = document.createElement("div");
+      div.className = "medicine-box";
+
+      div.innerHTML = `
+        <input type="text" placeholder="Medicine Name" class="med-name" required>
+        <input type="text" placeholder="Time (HH:MM AM/PM)" class="med-time" required
+          pattern="^([0]?[1-9]|1[0-2]):[0-5][0-9] ?(AM|PM|am|pm)$"
+          title="Enter time as HH:MM AM/PM (e.g., 8:30 AM)">
+        <button type="button" class="delete-btn">✖</button>
+      `;
+
+      document.getElementById("medicines").appendChild(div);
+
+      const btn = div.querySelector(".delete-btn");
+      btn.addEventListener("click", () => deleteMedicine(div));
+      updateDeleteButtons();
+    }
+
+    function deleteMedicine(div) {
+      const medicines = document.getElementById("medicines");
+      if (medicines.children.length > 1) {
+        div.remove();
+        updateDeleteButtons();
+      } else {
+        alert("You must have at least one medicine.");
+      }
+    }
+
+    function updateDeleteButtons() {
+      const meds = document.getElementById("medicines").children;
+      for (let i = 0; i < meds.length; i++) {
+        meds[i].querySelector(".delete-btn").style.display = meds.length > 1 ? "inline" : "none";
+      }
+    }
+
+    addMedicine();
+
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const meds = [];
+      const names = document.querySelectorAll(".med-name");
+      const times = document.querySelectorAll(".med-time");
+
+      for (let i = 0; i < names.length; i++) {
+        meds.push({ name: names[i].value, time: times[i].value });
+      }
+
+      const data = {
+        name: document.getElementById("name").value,
+        age: document.getElementById("age").value,
+        blood_group: document.getElementById("blood").value,
+        medical_history: document.getElementById("history").value,
+        email: document.getElementById("email").value,
+        timezone: document.getElementById("timezone").value,
+        medications: JSON.stringify(meds),
+        subscribed: document.getElementById("subscribed").checked
+      };
+
+      await fetch("https://helyxdtckaiqhbzdiwtb.supabase.co/rest/v1/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlbHl4ZHRja2FpcWhiemRpd3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NDAwODMsImV4cCI6MjA5MDAxNjA4M30.W27bCTc1YFRL7wsx1JlibbTnNhrS5_arXzy3OeknF_E",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlbHl4ZHRja2FpcWhiemRpd3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NDAwODMsImV4cCI6MjA5MDAxNjA4M30.W27bCTc1YFRL7wsx1JlibbTnNhrS5_arXzy3OeknF_E"
+        },
+        body: JSON.stringify(data)
+      });
+
+      document.getElementById("msg").innerText = "You're all set! 🎉";
+    });
+  </script>
+</body>
+</html>
